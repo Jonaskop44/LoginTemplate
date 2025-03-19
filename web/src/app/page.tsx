@@ -1,15 +1,13 @@
 "use client";
 
 import ApiClient from "@/api";
-import { motion } from "framer-motion";
 import React, { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
-import { Button, Checkbox, Input } from "@nextui-org/react";
-import { FaRegEye } from "react-icons/fa";
-import { FaRegEyeSlash } from "react-icons/fa";
+import { Button, Checkbox, Input } from "@heroui/react";
 import Link from "next/link";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import { Icon } from "@iconify/react";
 
 const apiClient = new ApiClient();
 type Variant = "LOGIN" | "SIGNUP";
@@ -82,7 +80,7 @@ const Home = () => {
     setIsLoading(true);
 
     if (variant === "LOGIN") {
-      const response = await apiClient.auth.login.post(data);
+      const response = await apiClient.auth.helper.login(data);
       if (response.status === false) {
         toast.error("Invalid credentials");
       } else {
@@ -107,11 +105,11 @@ const Home = () => {
     }
 
     if (variant === "SIGNUP") {
-      const response = await apiClient.auth.register.post(data);
+      const response = await apiClient.auth.helper.register(data);
       if (response.status === false) {
         toast.error("There is already an account with this email address");
       } else {
-        const login = await apiClient.auth.login.post(data);
+        const login = await apiClient.auth.helper.login(data);
         if (data.rememberMe) {
           Cookies.set("accessToken", login.data.backendTokens.accessToken, {
             expires: 1,
@@ -203,9 +201,15 @@ const Home = () => {
                     aria-label="toggle password visibility"
                   >
                     {isVisible ? (
-                      <FaRegEye className="text-2xl text-default-400 pointer-events-none" />
+                      <Icon
+                        icon="solar:eye-linear"
+                        className="text-2xl text-default-400 pointer-events-none"
+                      />
                     ) : (
-                      <FaRegEyeSlash className="text-2xl text-default-400 pointer-events-none" />
+                      <Icon
+                        icon="solar:eye-closed-bold"
+                        className="text-2xl text-default-400 pointer-events-none"
+                      />
                     )}
                   </button>
                 }

@@ -1,65 +1,52 @@
 import { User } from "@/types/user";
 import { create } from "zustand";
 import Cookies from "js-cookie";
-import axios from "axios";
+import ApiClient from "@/api";
 
 interface UserState {
-  user: User | null;
+  user: User;
   setUser: (user: User) => void;
-  fetchUser: () => Promise<void>;
-  refreshToken: () => Promise<void>;
+  fetchUser: () => void;
+  refreshToken: () => void;
 }
 
-export const useUserStore = create<UserState>((set) => ({
-  user: null,
+const apiClient = new ApiClient();
 
+export const userStore = create<UserState>((set) => ({
+  user: {} as User,
   setUser: (user) => set({ user }),
   fetchUser: async () => {
     const token = Cookies.get("accessToken");
-    if (token) {
-      await axios
-        .get(`/user/token/data/${token}`)
-        .then(async (response) => {
-          if (response.status !== 200) {
-            set({ user: null });
-            return { status: false, data: null, message: "User not found" };
-          }
 
-          const data = response.data;
-          set({ user: data });
-        })
-        .catch((error) => {
-          set({ user: null });
-          return { status: false, data: null, message: "Something went wrong" };
-        });
-    }
+    if (!token) return;
+
+    return apiClient.session.helper
+      .fetchUser(token)
+      .then((response) => {
+        if (response.status) {
+          set({ user: response.data });
+        } else {
+          set({ user: {} });
+        }
+      })
+      .catch(() => {
+        set({ user: {} });
+      });
   },
   refreshToken: async () => {
-    const accessToken = Cookies.get("accessToken");
     const refreshToken = Cookies.get("refreshToken");
 
-    if (!accessToken && refreshToken) {
-      await axios
-        .post(
-          `/auth/refreshToken`,
-          {
-            data: "[form]",
-          },
-          {
-            headers: {
-              Authorization: `Refresh ${refreshToken}`,
-            },
-          }
-        )
-        .then((response) => {
-          if (response.status !== 201) return { status: false };
+    if (!refreshToken) return;
 
-          const data = response.data;
-          Cookies.set("accessToken", data.accessToken);
-        })
-        .catch((error) => {
-          return { status: false };
-        });
-    }
+    return apiClient.session.helper
+      .refreshToken(refreshToken)
+      .then((response) => {
+        if (response.status) {
+          Cookies.set("accessToken", response.data.accessToken);
+        }
+      })
+      .catch(() => {
+        return { data: null, status: false };
+      });
   },
 }));

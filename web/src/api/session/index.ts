@@ -1,6 +1,6 @@
 import { Helper } from "./helper";
 
-export class Auth {
+export class Session {
   helper: Helper;
   constructor() {
     this.helper = new Helper();
